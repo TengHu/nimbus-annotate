@@ -1,0 +1,2009 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Speech Annotation Tool</title>
+  <style>
+    /* Studio dark palette (default) */
+    :root, :root[data-theme="dark"] {
+      --bg-app:        #0f1419;
+      --bg-panel:      #161b22;
+      --bg-card:       #1c222b;
+      --bg-track:      #11151b;
+      --bg-input:      #0d1117;
+      --bg-hover:      #232b36;
+
+      --border-subtle: #232b36;
+      --border-strong: #2f3742;
+
+      --text-primary:  #e6edf3;
+      --text-secondary:#8b949e;
+      --text-muted:    #6e7681;
+
+      --wave:          #4ad8a4;
+      --wave-progress: #6b95ff;
+      --playhead:      #ff5d5d;
+      --gt-color:      #6b95ff;
+      --gt-text:       #b6cdff;
+      --gt-bg:         rgba(107, 149, 255, 0.18);
+      --human-color:   #d29922;
+      --human-text:    #f1c44e;
+      --human-bg:      rgba(210, 153, 34, 0.22);
+
+      --primary:       #2762ed;
+      --primary-hover: #3676ff;
+      --success:       #238636;
+      --success-hover: #2ea043;
+      --danger:        #b62324;
+      --danger-hover:  #da3633;
+      --warning:       #9e6a03;
+      --warning-hover: #bb800a;
+      --ghost:         #2a313c;
+      --ghost-hover:   #353c47;
+
+      --scroll-thumb:  #2f3742;
+      --scroll-thumb-hover: #3b434f;
+    }
+
+    /* Studio light palette */
+    :root[data-theme="light"] {
+      --bg-app:        #f5f6f7;
+      --bg-panel:      #ffffff;
+      --bg-card:       #ffffff;
+      --bg-track:      #f3f4f6;
+      --bg-input:      #ffffff;
+      --bg-hover:      #eef2f6;
+
+      --border-subtle: #e5e7eb;
+      --border-strong: #d1d5db;
+
+      --text-primary:  #111827;
+      --text-secondary:#4b5563;
+      --text-muted:    #6b7280;
+
+      --wave:          #047857;
+      --wave-progress: #1d4ed8;
+      --playhead:      #dc2626;
+      --gt-color:      #1d4ed8;
+      --gt-text:       #1e3a8a;
+      --gt-bg:         rgba(29, 78, 216, 0.12);
+      --human-color:   #b45309;
+      --human-text:    #78350f;
+      --human-bg:      rgba(180, 83, 9, 0.18);
+
+      --primary:       #1d4ed8;
+      --primary-hover: #1e40af;
+      --success:       #15803d;
+      --success-hover: #166534;
+      --danger:        #b91c1c;
+      --danger-hover:  #991b1b;
+      --warning:       #b45309;
+      --warning-hover: #9a3412;
+      --ghost:         #e5e7eb;
+      --ghost-hover:   #d1d5db;
+
+      --scroll-thumb:  #d1d5db;
+      --scroll-thumb-hover: #9ca3af;
+    }
+
+    :root[data-theme="light"] button.ghost { color: var(--text-primary); }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg-app);
+      color: var(--text-primary);
+      min-height: 100vh;
+      padding: 1.5rem;
+      -webkit-font-smoothing: antialiased;
+    }
+    h1 { font-size: 1.25rem; text-align: center; margin-bottom: 1.25rem; font-weight: 600; letter-spacing: 0.02em; color: var(--text-primary); }
+
+    /* Dark-themed scrollbars */
+    ::-webkit-scrollbar { width: 10px; height: 10px; }
+    ::-webkit-scrollbar-track { background: var(--bg-track); }
+    ::-webkit-scrollbar-thumb { background: var(--scroll-thumb); border-radius: 5px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--scroll-thumb-hover); }
+    .layout { display: grid; grid-template-columns: 240px minmax(0, 1fr) 300px; gap: 1.25rem; max-width: 1700px; margin: 0 auto; }
+    .sidebar { display: flex; flex-direction: column; gap: 1rem; min-width: 0; }
+    .main { min-width: 0; }
+    .guide { min-width: 0; }
+    .guide .card { position: sticky; top: 1rem; max-height: calc(100vh - 2rem); overflow-y: auto; }
+    .card { background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 8px; padding: 1rem; }
+    .card h3 { font-size: 0.7rem; font-weight: 600; letter-spacing: 0.08em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.55rem; }
+    label { display: block; font-size: 0.78rem; color: var(--text-secondary); margin-bottom: 0.35rem; font-weight: 500; }
+    select, input[type=text], input[type=number], textarea {
+      width: 100%; padding: 0.5rem 0.7rem; border: 1px solid var(--border-strong); border-radius: 5px;
+      font-size: 0.88rem; background: var(--bg-input); color: var(--text-primary); font-family: inherit;
+    }
+    select:focus, input:focus, textarea:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 2px rgba(39, 98, 237, 0.25); }
+    textarea { resize: vertical; min-height: 2.5rem; }
+    .row { display: flex; gap: 0.5rem; }
+    button {
+      padding: 0.5rem 0.95rem; border: 1px solid transparent; border-radius: 5px; cursor: pointer;
+      font-size: 0.85rem; font-weight: 500; transition: background 0.1s, border-color 0.1s;
+      color: #fff; letter-spacing: 0.01em;
+    }
+    button:disabled { opacity: 0.4; cursor: not-allowed; }
+    button.primary { background: var(--primary); }
+    button.primary:hover:not(:disabled) { background: var(--primary-hover); }
+    button.success { background: var(--success); }
+    button.success:hover:not(:disabled) { background: var(--success-hover); }
+    button.warning { background: var(--warning); }
+    button.warning:hover:not(:disabled) { background: var(--warning-hover); }
+    button.danger { background: var(--danger); }
+    button.danger:hover:not(:disabled) { background: var(--danger-hover); }
+    button.ghost { background: var(--ghost); color: var(--text-primary); border-color: var(--border-strong); }
+    button.ghost:hover:not(:disabled) { background: var(--ghost-hover); }
+    .progress-bar { background: var(--bg-input); border-radius: 4px; height: 4px; overflow: hidden; margin-bottom: 0.4rem; border: 1px solid var(--border-subtle); }
+    .progress-fill { background: var(--wave); height: 100%; transition: width 0.3s; }
+    .progress-text { font-size: 0.75rem; color: var(--text-muted); text-align: center; font-family: ui-monospace, monospace; }
+    .instructions { font-size: 0.78rem; color: var(--text-secondary); line-height: 1.55; }
+    .instructions strong { color: var(--text-primary); font-weight: 500; }
+    .instructions ul { padding-left: 1rem; list-style: none; }
+    .instructions li { margin-bottom: 0.35rem; }
+    .instructions li::before { content: "·"; margin-right: 0.4rem; color: var(--text-muted); }
+    kbd { background: var(--bg-input); border: 1px solid var(--border-strong); border-radius: 3px; padding: 0 0.3rem; font-size: 0.72rem; font-family: ui-monospace, monospace; color: var(--text-primary); }
+
+    .main { display: flex; flex-direction: column; gap: 1rem; min-width: 0; }
+    .audio-stack { position: sticky; top: 0; z-index: 5; background: var(--bg-app); display: flex; flex-direction: column; gap: 0.5rem; padding-bottom: 0.6rem; }
+    .panel-label { font-size: 0.78rem; font-weight: 500; color: var(--text-secondary); margin-bottom: 0.4rem; text-transform: uppercase; letter-spacing: 0.06em; }
+    .row-label { background: var(--bg-card); padding: 0.25rem 0.6rem; border: 1px solid var(--border-subtle); border-bottom: none; border-radius: 6px 6px 0 0; font-size: 0.78rem; font-weight: 500; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.06em; display: flex; justify-content: space-between; align-items: center; }
+    .waveform-wrap { background: var(--bg-panel); border: 1px solid var(--border-subtle); border-radius: 0 0 6px 6px; padding: 0.5rem; overflow: hidden; }
+    #waveform { width: 100%; background: var(--bg-panel); min-height: 72px; overflow: hidden; contain: paint; cursor: grab; }
+    #waveform.panning, #waveform.panning * { cursor: grabbing !important; }
+    /* Hide native scrollbar — drag-to-pan is the only horizontal navigation. */
+    #waveform [part="scroll"] { scrollbar-width: none; }
+    #waveform [part="scroll"]::-webkit-scrollbar { display: none; }
+
+    /* Mirror rows: scroll-synced with wavesurfer. Container clips, inner track sized in px. */
+    .mirror-row { position: relative; height: 38px; background: var(--bg-track); border-radius: 3px; overflow: hidden; cursor: crosshair; }
+    .mirror-track { position: absolute; top: 0; left: 0; bottom: 0; height: 100%; min-width: 100%; }
+    .mirror-region { position: absolute; top: 3px; bottom: 3px; border-radius: 2px; font-size: 0.7rem; padding: 2px 5px; white-space: nowrap; overflow: hidden; font-family: ui-monospace, monospace; }
+    .mirror-region.gt { background: var(--gt-bg); border: 1px solid var(--gt-color); color: var(--gt-text); pointer-events: none; }
+    .mirror-region.human { background: var(--human-bg); border: 1px solid var(--human-color); color: var(--human-text); cursor: grab; }
+    .mirror-region.human:hover { background: var(--human-color); color: #fff; }
+    .mirror-region.human.selected { background: var(--human-color); color: #fff; box-shadow: 0 0 0 2px var(--human-color), 0 0 8px var(--human-color); z-index: 3; }
+
+    /* Wavesurfer region selection — applied via JS to the region's element. */
+    .ws-region-selected { outline: 2px solid var(--human-color) !important; outline-offset: -2px; z-index: 5 !important; }
+
+    /* Transcript card selection (matched-pair via the editable interval's _id). */
+    .turn-card.selected { outline: 2px solid var(--human-color); outline-offset: -1px; }
+    .mirror-preview { position: absolute; top: 3px; bottom: 3px; background: var(--human-bg); border: 1px dashed var(--human-color); border-radius: 2px; pointer-events: none; z-index: 2; }
+    .mirror-cursor { position: absolute; top: 0; bottom: 0; width: 1px; background: var(--playhead); box-shadow: 0 0 4px var(--playhead); pointer-events: none; transform: translateX(-9999px); z-index: 2; }
+
+    /* Loading overlay */
+    .overlay { position: fixed; inset: 0; background: rgba(8, 11, 16, 0.75); display: flex; align-items: center; justify-content: center; z-index: 100; backdrop-filter: blur(2px); }
+    .overlay[hidden] { display: none; }
+    .overlay-card { background: var(--bg-card); border: 1px solid var(--border-strong); padding: 1.5rem 2rem; border-radius: 8px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); display: flex; flex-direction: column; align-items: center; gap: 0.75rem; min-width: 260px; }
+    .spinner { width: 28px; height: 28px; border: 2px solid var(--border-strong); border-top-color: var(--wave); border-radius: 50%; animation: spin 0.8s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .overlay-text { font-size: 0.85rem; color: var(--text-secondary); font-family: ui-monospace, monospace; }
+
+    .theme-toggle {
+      position: fixed; top: 1rem; right: 1rem; z-index: 50;
+      width: 36px; height: 36px; border-radius: 50%;
+      background: var(--bg-card); border: 1px solid var(--border-strong);
+      color: var(--text-primary); font-size: 0.95rem; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: background 0.1s, transform 0.1s;
+    }
+    .theme-toggle:hover { background: var(--bg-hover); transform: scale(1.05); }
+
+    /* Floating transport — always visible at the bottom so labelers don't
+       have to scroll back to the <audio> control to pause or skip. */
+    .transport {
+      position: fixed; bottom: 1rem; left: 50%; transform: translateX(-50%);
+      z-index: 50; display: flex; flex-direction: column; align-items: center; gap: 0.3rem;
+      background: var(--bg-card); border: 1px solid var(--border-strong);
+      border-radius: 18px; padding: 0.35rem 0.6rem 0.45rem;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.35);
+    }
+    .transport-row { display: flex; align-items: center; gap: 0.35rem; }
+    /* Always-visible legend — same key-chip vocabulary as the buttons, but
+       for the four context-keys that don't have their own action button. */
+    .transport-hints {
+      display: flex; align-items: center; gap: 0.9rem;
+      font-size: 0.66rem; color: var(--text-muted);
+      font-family: ui-monospace, monospace; letter-spacing: 0.03em;
+      padding: 0.15rem 0.25rem 0;
+    }
+    .transport-hints span { display: inline-flex; align-items: center; gap: 0.3rem; }
+    .transport button {
+      background: transparent; color: var(--text-primary); border: none;
+      width: 48px; height: 52px; border-radius: 14px; padding: 4px 0;
+      font-size: 0.95rem; line-height: 1; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 3px;
+    }
+    .transport button:hover:not(:disabled) { background: var(--bg-hover); }
+    .transport .icon { font-size: 1.05rem; line-height: 1; }
+    .transport .key-chip {
+      font-family: ui-monospace, monospace; font-size: 0.62rem; font-weight: 600;
+      letter-spacing: 0.06em; padding: 1px 5px; border-radius: 3px;
+      background: var(--bg-input); border: 1px solid var(--border-strong);
+      color: var(--text-secondary); line-height: 1.1;
+    }
+    .transport .play-pause { background: var(--primary); color: #fff; width: 56px; height: 58px; }
+    .transport .play-pause .icon { font-size: 1.15rem; }
+    .transport .play-pause:hover:not(:disabled) { background: var(--primary-hover); }
+    .transport .play-pause .key-chip { background: rgba(255,255,255,0.2); border-color: rgba(255,255,255,0.35); color: #fff; }
+    .transport .divider { width: 1px; height: 32px; background: var(--border-strong); margin: 0 0.2rem; }
+
+    /* Pending interval-start marker on the human row — visible after the user
+       presses `[`, until they press `]` (or Esc to cancel). Distinct from the
+       red playhead so labelers see "yes my start is parked here". */
+    .pending-start {
+      position: absolute; top: 0; bottom: 0; width: 2px;
+      background: var(--human-color); box-shadow: 0 0 6px var(--human-color);
+      pointer-events: none; transform: translateX(-9999px); z-index: 3;
+    }
+
+    /* Toast popup for transient errors like overlap rejection. */
+    .toast { position: fixed; top: 1rem; left: 50%; transform: translateX(-50%);
+      background: var(--bg-card); border: 1px solid var(--danger-hover);
+      color: var(--text-primary); padding: 0.75rem 1.25rem; border-radius: 6px;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.4); z-index: 200; font-size: 0.9rem;
+      display: flex; align-items: center; gap: 0.6rem; pointer-events: none;
+      opacity: 0; transition: opacity 0.15s ease, transform 0.15s ease; }
+    .toast[data-visible="true"] { opacity: 1; transform: translateX(-50%) translateY(0); }
+    .toast[data-visible="false"] { opacity: 0; transform: translateX(-50%) translateY(-6px); }
+    .toast .icon { color: var(--danger-hover); font-weight: bold; font-size: 1.1rem; }
+
+    /* Fatal API-error modal — uses the same overlay surface as the loader. */
+    .err-card { background: var(--bg-card); border: 1px solid var(--danger-hover);
+      padding: 1.5rem 2rem; border-radius: 8px; box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+      display: flex; flex-direction: column; align-items: center; gap: 0.75rem;
+      max-width: 480px; min-width: 320px; position: relative; }
+    .err-card .err-icon { font-size: 2rem; color: var(--danger-hover); }
+    .err-card .err-title { font-size: 1rem; font-weight: 600; color: var(--text-primary); }
+    .err-card .err-msg { font-size: 0.82rem; color: var(--text-secondary); font-family: ui-monospace, monospace; text-align: center; word-break: break-word; }
+    .err-card .err-close { position: absolute; top: 0.5rem; right: 0.6rem; background: none;
+      border: none; color: var(--text-muted); font-size: 1.25rem; line-height: 1; cursor: pointer;
+      padding: 0.25rem 0.4rem; border-radius: 4px; }
+    .err-card .err-close:hover { color: var(--text-primary); background: rgba(255,255,255,0.06); }
+    .toolbar { display: flex; gap: 0.5rem; align-items: center; padding: 0.5rem 0; }
+    .toolbar .spacer { flex: 1; }
+
+    .transcripts { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 1rem; }
+
+    /* Two side-by-side panels (source ‖ editable). Each panel is its own column
+       in an outer grid; each panel's row grid is `subgrid`, so a single row index
+       i in either panel sits at the same Y as the matching row in the other. */
+    .transcripts-pair {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 0 1rem;
+      align-items: start;
+      padding: 0.25rem;
+    }
+    .transcripts-col { display: flex; flex-direction: column; gap: 0.4rem; min-width: 0; }
+    .transcripts-col .panel-head { font-size: 0.68rem; font-weight: 500; color: var(--text-muted);
+      text-transform: uppercase; letter-spacing: 0.08em; padding: 0.35rem 0.1rem; }
+    .source-blob {
+      background: var(--bg-track); border: 1px solid var(--border-subtle); border-radius: 4px;
+      padding: 0.6rem 0.8rem; font-size: 0.85rem; line-height: 1.5; color: var(--text-secondary);
+      white-space: pre-wrap; max-height: 60vh; overflow-y: auto; resize: vertical;
+    }
+    .edit-cards { display: flex; flex-direction: column; gap: 0.5rem; max-height: 60vh; overflow-y: auto; padding-right: 0.4rem; resize: vertical; }
+
+    .turn-card {
+      background: var(--bg-track); border: 1px solid var(--border-subtle); border-radius: 4px;
+      padding: 0.45rem 0.55rem;
+      display: flex; flex-direction: column; gap: 0.35rem;
+      transition: background 0.15s, border-color 0.15s;
+      cursor: pointer; min-width: 0;
+    }
+    .turn-card.active { border-color: var(--playhead); background: var(--bg-hover); }
+    .turn-card .turn-time { font-family: ui-monospace, monospace; font-size: 0.7rem; color: var(--text-muted); letter-spacing: 0.02em; }
+    .turn-card .src-text { font-size: 0.85rem; color: var(--text-secondary); line-height: 1.4; }
+    .turn-card .src-text.empty { color: var(--text-muted); font-style: italic; }
+    .turn-card .edit-row { display: flex; gap: 0.4rem; align-items: stretch; }
+    .turn-card textarea {
+      flex: 1; min-width: 0; box-sizing: border-box; font-size: 0.85rem; padding: 0.35rem 0.55rem;
+      background: var(--bg-input); border: 1px solid var(--border-strong); border-radius: 3px;
+      color: var(--text-primary); min-height: 2.2rem; resize: vertical; font-family: inherit;
+      line-height: 1.4; overflow-y: hidden;
+    }
+    .turn-card textarea:focus { outline: none; border-color: var(--primary); }
+    .turn-card textarea:disabled { background: transparent; color: var(--text-muted); cursor: not-allowed; }
+    .turn-card .del-btn {
+      background: transparent; color: var(--danger-hover); border: none; padding: 0 0.4rem;
+      font-size: 1rem; cursor: pointer; align-self: stretch; border-radius: 3px;
+    }
+    .turn-card .del-btn:hover:not(:disabled) { background: rgba(218, 54, 51, 0.15); }
+    .turn-card .del-btn:disabled { opacity: 0.25; cursor: not-allowed; }
+    .turns-list { display: flex; flex-direction: column; gap: 0.4rem; max-height: 400px; overflow-y: auto; padding-right: 0.4rem; }
+    .turn-row { display: grid; grid-template-columns: 80px minmax(0, 1fr) 32px; gap: 0.5rem; align-items: start; padding: 0.5rem; background: var(--bg-track); border: 1px solid var(--border-subtle); border-radius: 4px; border-left: 2px solid transparent; min-width: 0; }
+    .turn-row > * { min-width: 0; }
+    .turn-row textarea { width: 100%; box-sizing: border-box; }
+    .turn-row.active { border-left-color: var(--human-color); background: var(--bg-hover); }
+    .turn-time { font-size: 0.72rem; font-family: ui-monospace, monospace; color: var(--text-muted); padding-top: 0.5rem; letter-spacing: 0.02em; }
+    .turn-text { font-size: 0.85rem; padding: 0.4rem 0.6rem; background: var(--bg-input); border: 1px solid var(--border-strong); border-radius: 3px; min-height: 2.2rem; color: var(--text-primary); }
+    .turn-text.editable { cursor: text; }
+    .turn-text.readonly { color: var(--text-secondary); background: transparent; border-color: var(--border-subtle); }
+    .turn-delete { background: transparent; color: var(--danger-hover); padding: 0.25rem; font-size: 0.95rem; border: none; }
+    .turn-delete:hover { background: rgba(218, 54, 51, 0.15); }
+
+    .action-bar { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto auto; gap: 0.5rem; padding-top: 0.5rem; }
+
+    .status { font-size: 0.82rem; color: var(--text-muted); padding: 0.4rem 0; min-height: 1.5rem; font-family: ui-monospace, monospace; }
+    .status.error { color: var(--danger-hover); }
+    .status.success { color: var(--wave); }
+
+    .collapse-toggle {
+      background: transparent; border: none; color: var(--text-muted);
+      cursor: pointer; padding: 0 0.35rem 0 0; font-size: 0.75rem; line-height: 1;
+      display: inline-block; transition: transform 0.15s; transform-origin: center;
+    }
+    .collapse-toggle:hover { color: var(--text-primary); }
+    .collapsible[data-collapsed="true"] > .row-label .collapse-toggle,
+    .collapsible[data-collapsed="true"] > .panel-head .collapse-toggle { transform: rotate(-90deg); }
+    .collapsible[data-collapsed="true"] > .waveform-wrap,
+    .collapsible[data-collapsed="true"] > .source-blob { display: none; }
+    .collapsible[data-collapsed="true"] > .row-label { border-bottom: 1px solid var(--border-subtle); border-radius: 6px; }
+
+    @media (max-width: 1200px) {
+      .layout { grid-template-columns: 240px minmax(0, 1fr); }
+      .guide { display: none; }
+    }
+    @media (max-width: 900px) {
+      .layout { grid-template-columns: 1fr; }
+      .transcripts { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <button id="theme-toggle" class="theme-toggle" title="Toggle theme (D/L)" aria-label="Toggle theme">☾</button>
+  <div class="transport" role="toolbar" aria-label="Audio transport">
+    <div class="transport-row">
+      <button id="transport-back" type="button" title="Back 3 seconds" aria-label="Back 3 seconds">
+        <span class="icon">«</span><span class="key-chip">J</span>
+      </button>
+      <button id="transport-playpause" class="play-pause" type="button" title="Play / Pause" aria-label="Play / Pause">
+        <span class="icon" id="transport-icon">▶</span><span class="key-chip">K</span>
+      </button>
+      <button id="transport-fwd" type="button" title="Forward 3 seconds" aria-label="Forward 3 seconds">
+        <span class="icon">»</span><span class="key-chip">L</span>
+      </button>
+      <span class="divider" aria-hidden="true"></span>
+      <button id="transport-mark-start" type="button" title="Mark interval start at playhead" aria-label="Mark interval start at playhead">
+        <span class="icon">⊢</span><span class="key-chip">[</span>
+      </button>
+      <button id="transport-mark-end" type="button" title="Mark interval end → create + focus textarea" aria-label="Mark interval end and create">
+        <span class="icon">⊣</span><span class="key-chip">]</span>
+      </button>
+    </div>
+    <div class="transport-hints" aria-hidden="true">
+      <span><span class="key-chip">[</span>start</span>
+      <span><span class="key-chip">]</span>end</span>
+      <span><span class="key-chip">Enter</span>edit</span>
+      <span><span class="key-chip">Esc</span>back</span>
+    </div>
+  </div>
+  <div id="toast" class="toast" data-visible="false"><span class="icon">⚠</span><span id="toast-text"></span></div>
+  <div id="api-error-modal" class="overlay" hidden>
+    <div class="err-card">
+      <button class="err-close" id="api-error-close" aria-label="Close">×</button>
+      <div class="err-icon">⚠</div>
+      <div class="err-title">Something went wrong</div>
+      <div id="api-error-msg" class="err-msg"></div>
+      <div class="err-hint" style="margin-top: 0.5rem; opacity: 0.8;">
+        Try clicking <b>Load</b> again. If it keeps failing, contact the admin.
+      </div>
+    </div>
+  </div>
+  <div id="loading-overlay" class="overlay" hidden>
+    <div class="overlay-card">
+      <div class="spinner"></div>
+      <div class="overlay-text" id="loading-text">Loading conversation…</div>
+    </div>
+  </div>
+  <h1>Speech Annotation Tool</h1>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="card">
+        <h3>Annotator</h3>
+        <label for="annotator-input">Your name (used in saved filenames)</label>
+        <input type="text" id="annotator-input" placeholder="e.g. alice" autocomplete="off" />
+        <div id="annotator-current" style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.4rem;"></div>
+      </div>
+
+      <div class="card">
+        <h3>Dataset</h3>
+        <label for="filter-volume">Volume</label>
+        <select id="filter-volume"><option value="">all</option></select>
+        <div style="height: 0.5rem;"></div>
+        <label for="filter-group">Group</label>
+        <select id="filter-group"><option value="">all</option></select>
+        <hr style="border: none; border-top: 1px solid var(--border-subtle); margin: 0.75rem 0;" />
+        <label for="conv-search">Search</label>
+        <input type="search" id="conv-search" placeholder="e.g. conv_666" autocomplete="off" />
+        <div style="height: 0.5rem;"></div>
+        <label for="conv-select">Conversation</label>
+        <select id="conv-select"><option value="">Loading…</option></select>
+        <input type="text" id="conv-id-display" readonly placeholder="Selected ID — click to copy"
+          style="margin-top: 0.35rem; font-family: ui-monospace, monospace; font-size: 0.72rem; cursor: pointer;" />
+        <div style="height: 0.5rem;"></div>
+        <label for="jump-input">Jump to #</label>
+        <div class="row">
+          <input type="number" id="jump-input" min="1" placeholder="#" />
+          <button class="ghost" id="jump-btn">Pick</button>
+        </div>
+        <div style="height: 0.5rem;"></div>
+        <button class="primary" id="load-btn" style="width: 100%;">Load selected →</button>
+      </div>
+
+      <div class="card" hidden>
+        <h3>Progress</h3>
+        <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width: 0%"></div></div>
+        <div class="progress-text" id="progress-text">0 / 0 annotated</div>
+      </div>
+
+    </aside>
+
+    <main class="main">
+      <div class="audio-stack">
+        <div>
+          <audio id="audio" controls style="width: 100%;"></audio>
+        </div>
+
+        <div class="collapsible" data-section="waveform" data-collapsed="false">
+          <div class="row-label"><span><button class="collapse-toggle" type="button" aria-label="Toggle waveform">▾</button>Waveform</span>
+            <span>
+              <button class="ghost" id="zoom-in">Zoom In</button>
+              <button class="ghost" id="zoom-out">Zoom Out</button>
+              <button class="ghost" id="zoom-reset">Reset</button>
+            </span>
+          </div>
+          <div class="waveform-wrap"><div id="waveform"></div></div>
+        </div>
+
+        <div class="collapsible" data-section="gt" data-collapsed="false">
+          <div class="row-label"><span><button class="collapse-toggle" type="button" aria-label="Toggle ground truth">▾</button>Ground Truth (read-only)</span></div>
+          <div class="waveform-wrap"><div class="mirror-row" id="gt-row"><div class="mirror-track" id="gt-track"></div><div class="mirror-cursor" id="gt-cursor"></div></div></div>
+        </div>
+
+        <div class="collapsible" data-section="human" data-collapsed="false">
+          <div class="row-label">
+            <span><button class="collapse-toggle" type="button" aria-label="Toggle human annotation">▾</button>Human Annotation — drag/resize on the waveform above to edit</span>
+            <span>
+              <button class="warning" id="add-interval">Add Interval (A)</button>
+              <button class="danger" id="del-interval">Delete Selected</button>
+            </span>
+          </div>
+          <div class="waveform-wrap"><div class="mirror-row" id="human-row"><div class="mirror-track" id="human-track"><div class="mirror-preview" id="human-preview" hidden></div></div><div class="pending-start" id="pending-start-marker"></div><div class="mirror-cursor" id="human-cursor"></div></div></div>
+        </div>
+      </div>
+
+      <div>
+        <div class="row-label"><span>Transcripts</span></div>
+        <div class="waveform-wrap">
+          <div class="transcripts-pair" id="transcripts-pair">
+            <div class="transcripts-col collapsible" data-section="source" data-collapsed="false">
+              <div class="panel-head"><button class="collapse-toggle" type="button" aria-label="Toggle source transcript">▾</button>Source transcript (reference, read-only)</div>
+              <div class="source-blob" id="source-blob"></div>
+            </div>
+            <div class="transcripts-col">
+              <div class="panel-head">Per-turn annotation (editable)</div>
+              <div class="edit-cards" id="edit-cards"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="status" id="status"></div>
+      <div class="action-bar">
+        <button class="success" id="save-btn">Save</button>
+        <button class="primary" id="save-next-btn">Save + Next →</button>
+        <button class="ghost" id="next-btn">Next →</button>
+      </div>
+    </main>
+
+    <aside class="guide">
+      <div class="card instructions">
+        <h3 style="color: var(--wave);">Speech segments</h3>
+        <ul>
+          <li>Mark only when <strong>this speaker is speaking directly to the recording</strong> — not background or side conversations.</li>
+          <li>Start/end times should be accurate to <strong>±10ms</strong>.</li>
+          <li>Background speakers, TV, and other noises are <strong>not speech</strong> — no interval there.</li>
+          <li>If audio is completely unclear for a turn, set its transcript to <code>[unintelligible]</code>.</li>
+        </ul>
+
+        <h3 style="color: var(--wave); margin-top: 0.75rem;">Transcript rules</h3>
+        <ul>
+          <li><strong>Spelled words:</strong> caps with spaces — "My name is spelled <em>A L E X</em>".</li>
+          <li><strong>IDs / numbers:</strong> numerical — "My ID is 23582", "My zip is 97229".</li>
+          <li><strong>Acronyms:</strong> all caps, no periods — "FBI", "NSA".</li>
+          <li><strong>Emails:</strong> proper format (<em>john.example@gmail.com</em>); if the speaker spells out letters/numerals, follow the spelling rule instead.</li>
+          <li><strong>Punctuation:</strong> proper sentences — periods, commas, !, ?.</li>
+          <li><strong>Proper nouns &amp; brand names:</strong> capitalize.</li>
+          <li><strong>Disfluencies:</strong> include "um", "uh", etc.</li>
+          <li><strong>Language switching</strong> mid-sentence (e.g. English + Spanish): reflect both accurately.</li>
+          <li><strong>Non-speech events / emotions:</strong> tag inline — <code>[laughs] [sighs] [groans] [sarcastic] [excited] [yell] [sob] [sing] [whispers] [chuckles]</code>.</li>
+        </ul>
+      </div>
+    </aside>
+  </div>
+
+  <script type="module">
+    import WaveSurfer from "https://unpkg.com/wavesurfer.js@7/dist/wavesurfer.esm.js";
+    import RegionsPlugin from "https://unpkg.com/wavesurfer.js@7/dist/plugins/regions.esm.js";
+    import TimelinePlugin from "https://unpkg.com/wavesurfer.js@7/dist/plugins/timeline.esm.js";
+
+    // Derive the API base from our own URL so the mount path is irrelevant.
+    const base = window.location.pathname.replace(/\/(index\.html)?$/, "");
+    const API = `${base}/api`;
+    // Annotator identity. Precedence: ?annotator= URL param > localStorage > "anyone".
+    // Used by the server to partition saved files so two people working on the
+    // same conv don't overwrite each other's work.
+    const ANNOTATOR_KEY = "nimbus-annotate.annotator";
+    function sanitizeAnnotator(s) {
+      const v = (s ?? "").trim().toLowerCase().replace(/[^a-z0-9._-]/g, "-");
+      return v || "anyone";
+    }
+    let ANNOTATOR = sanitizeAnnotator(
+      new URLSearchParams(location.search).get("annotator") ||
+      localStorage.getItem(ANNOTATOR_KEY) ||
+      "anyone",
+    );
+    let annotatorQS = `annotator=${encodeURIComponent(ANNOTATOR)}`;
+
+    // ╔════════════════════════════════════════════════════════════════════╗
+    // ║                      DATA MODEL                                    ║
+    // ║                                                                    ║
+    // ║  The whole app is built on two atoms:                              ║
+    // ║                                                                    ║
+    // ║    1. AUDIO  — one signal per conversation.                        ║
+    // ║       Owned by <audio> element. State knows its duration.          ║
+    // ║                                                                    ║
+    // ║    2. INTERVALS — lists of { start, end, ...payload }.             ║
+    // ║       Three lists live in state.intervals:                         ║
+    // ║         gt    : pipeline output         {start,end,label}  RO      ║
+    // ║         src   : original transcription  {start,end,text}   RO      ║
+    // ║         edit  : the user's annotation   {start,end,text,_id} RW    ║
+    // ║                                                                    ║
+    // ║  ONE mapping bridges the two: pxps = pixels per second.            ║
+    // ║  Time × pxps → x-pixel. pxps is set ONLY by wavesurfer's zoom.     ║
+    // ║                                                                    ║
+    // ║  Each VIEW is a pure projection of (audio, intervals, pxps):       ║
+    // ║    • Waveform canvas       ← audio                                 ║
+    // ║    • Playhead cursors      ← audio.currentTime × pxps              ║
+    // ║    • Mirror bar row "gt"   ← intervals.gt as bars                  ║
+    // ║    • Mirror bar row "edit" ← intervals.edit as bars                ║
+    // ║    • Wavesurfer regions    ← intervals.edit (interactive)          ║
+    // ║    • Source/Edit cards     ← intervals.src + intervals.edit merged ║
+    // ║                                                                    ║
+    // ║  Mutation paths:                                                   ║
+    // ║    • Region drag/create/remove → syncFromRegions → intervals.edit  ║
+    // ║    • Textarea input            → mutate intervals.edit[i].text     ║
+    // ║    • Reset button              → rebuild intervals.edit from src   ║
+    // ║                                                                    ║
+    // ╚════════════════════════════════════════════════════════════════════╝
+    const state = {
+      conversations: [],
+      filtered: [],
+      currentIdx: -1,
+      currentId: null,
+      currentVolume: null,
+
+      // audio
+      duration: 0,
+      pxps: 0,                   // set ONLY by wavesurfer "zoom" event
+
+      // interval lists — all share {start, end, ...} shape
+      intervals: {
+        gt:   [],                // {start, end, label}
+        src:  [],                // {start, end, text}
+        edit: [],                // {start, end, text, _id}
+      },
+
+      // wavesurfer (visualization engine for waveform + interactive regions)
+      ws: null,
+      regions: null,
+      selectedRegion: null,
+      selectedId: null,        // _id of the currently selected editable interval (or null)
+      _hydrating: false,
+
+      // Keyboard interval creation: `[` parks pendingStart at current playhead,
+      // `]` finalizes by creating an interval from pendingStart to currentTime.
+      // Null when no start is parked. Cleared on Esc and on conversation load.
+      pendingStart: null,
+    };
+
+    // ─── Overlap helpers (no-overlap is a hard invariant for editable intervals) ───
+    function findOverlap(start, end, ignoreId = null) {
+      for (const t of state.intervals.edit) {
+        if (t._id === ignoreId) continue;
+        if (!(end <= t.start || start >= t.end)) return t;   // interior intersection
+      }
+      return null;
+    }
+    function overlapsExisting(start, end, ignoreId = null) {
+      return !!findOverlap(start, end, ignoreId);
+    }
+
+    // Single entry point for selection. Sets state.selectedId and applies the
+    // .selected visual cue across all three views: wavesurfer region, mirror
+    // bar (Human Annotation row), and the transcript card pair.
+    function setSelection(id) {
+      state.selectedId = id || null;
+      // 1) Wavesurfer regions — toggle a class on each region's DOM element
+      for (const r of state.regions?.getRegions() ?? []) {
+        if (!r.element) continue;
+        r.element.classList.toggle("ws-region-selected", r.id === state.selectedId);
+      }
+      // 2) Mirror bars + 3) transcript cards re-render with .selected class
+      renderMirrors();
+      applyCardSelection();
+    }
+
+    function applyCardSelection() {
+      for (const card of els.transcriptsPair.querySelectorAll(".turn-card")) {
+        const editIdx = +card.dataset.editIdx;
+        const turn = state.intervals.edit[editIdx];
+        card.classList.toggle("selected", !!turn && turn._id === state.selectedId);
+      }
+    }
+
+    // The only function allowed to compute pxps when state.pxps is unset.
+    function fitPxps() {
+      return state.duration ? els.waveform.clientWidth / state.duration : 0;
+    }
+    function effectivePxps() {
+      return state.pxps || fitPxps();
+    }
+
+    const els = {
+      audio: document.getElementById("audio"),
+      waveform: document.getElementById("waveform"),
+      gtRow: document.getElementById("gt-row"),
+      gtTrack: document.getElementById("gt-track"),
+      gtCursor: document.getElementById("gt-cursor"),
+      humanRow: document.getElementById("human-row"),
+      humanTrack: document.getElementById("human-track"),
+      humanCursor: document.getElementById("human-cursor"),
+      humanPreview: document.getElementById("human-preview"),
+      pendingStartMarker: document.getElementById("pending-start-marker"),
+      loadingOverlay: document.getElementById("loading-overlay"),
+      loadingText: document.getElementById("loading-text"),
+      filterVolume: document.getElementById("filter-volume"),
+      filterGroup: document.getElementById("filter-group"),
+      convSearch: document.getElementById("conv-search"),
+      convSelect: document.getElementById("conv-select"),
+      convIdDisplay: document.getElementById("conv-id-display"),
+      jumpInput: document.getElementById("jump-input"),
+      jumpBtn: document.getElementById("jump-btn"),
+      loadBtn: document.getElementById("load-btn"),
+      progressFill: document.getElementById("progress-fill"),
+      progressText: document.getElementById("progress-text"),
+      transcriptsPair: document.getElementById("transcripts-pair"),
+      sourceBlob: document.getElementById("source-blob"),
+      editCards: document.getElementById("edit-cards"),
+      saveBtn: document.getElementById("save-btn"),
+      saveNextBtn: document.getElementById("save-next-btn"),
+      nextBtn: document.getElementById("next-btn"),
+      addBtn: document.getElementById("add-interval"),
+      delBtn: document.getElementById("del-interval"),
+      zoomIn: document.getElementById("zoom-in"),
+      zoomOut: document.getElementById("zoom-out"),
+      zoomReset: document.getElementById("zoom-reset"),
+      status: document.getElementById("status"),
+    };
+
+    function setStatus(msg, cls = "") {
+      els.status.className = "status " + cls;
+      els.status.textContent = msg;
+    }
+
+    let _loadingDepth = 0;
+    function showLoading(text) {
+      _loadingDepth++;
+      els.loadingText.textContent = text || "Loading…";
+      els.loadingOverlay.hidden = false;
+    }
+    function hideLoading() {
+      _loadingDepth = Math.max(0, _loadingDepth - 1);
+      if (_loadingDepth === 0) els.loadingOverlay.hidden = true;
+    }
+    async function withOverlay(text, fn) {
+      showLoading(text);
+      try { return await fn(); } finally { hideLoading(); }
+    }
+
+    // Transient warning popup (e.g., for overlap rejection).
+    let toastTimer = null;
+    function showToast(text, ms = 2200) {
+      const toast = document.getElementById("toast");
+      document.getElementById("toast-text").textContent = text;
+      toast.dataset.visible = "true";
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => { toast.dataset.visible = "false"; }, ms);
+    }
+
+    // Error dialog. No buttons — the dialog instructs the user to re-click
+    // Load (or contact admin). It auto-dismisses whenever a new load call
+    // starts (see hideErrorDialog calls in loadConversations/loadConversation).
+    function showReloadDialog(msg) {
+      document.getElementById("api-error-msg").textContent = msg || "Unknown error";
+      document.getElementById("api-error-modal").hidden = false;
+      // Hide the loading spinner if it was up, so the error sits on its own.
+      els.loadingOverlay.hidden = true;
+      _loadingDepth = 0;
+    }
+    function hideErrorDialog() {
+      document.getElementById("api-error-modal").hidden = true;
+    }
+    // Three ways to dismiss the dialog so the user is never trapped:
+    //   - × close button in the corner
+    //   - click the dimmed backdrop outside the card
+    //   - press Escape
+    document.getElementById("api-error-close").addEventListener("click", hideErrorDialog);
+    document.getElementById("api-error-modal").addEventListener("click", (e) => {
+      if (e.target.id === "api-error-modal") hideErrorDialog();
+    });
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && !document.getElementById("api-error-modal").hidden) hideErrorDialog();
+    });
+
+    // Centralized fetch with auto-reload-prompt on failure. All API calls go
+    // through this so any 4xx/5xx/network error pops the dialog uniformly.
+    async function apiFetch(url, opts) {
+      let res;
+      try {
+        res = await fetch(url, opts);
+      } catch (err) {
+        showReloadDialog(`Network error: ${err.message || err}\n${url}`);
+        throw err;
+      }
+      if (!res.ok) {
+        let body = null;
+        try { body = await res.json(); } catch {}
+        const detail = body?.error || body?.detail || res.statusText;
+        showReloadDialog(`API ${res.status} on ${new URL(url, location.origin).pathname}\n${detail}`);
+        throw new Error(`${res.status}: ${detail}`);
+      }
+      return res;
+    }
+
+    async function loadConversations() {
+      hideErrorDialog();
+      await withOverlay("Loading conversation list…", async () => {
+        const res = await apiFetch(`${API}/conversations?${annotatorQS}`);
+        state.conversations = await res.json();
+        populateFilterOptions();
+        applyFilter();
+        updateProgress();
+      });
+    }
+
+    function populateFilterOptions() {
+      const volumes = [...new Set(state.conversations.map((c) => c.volume).filter(Boolean))].sort();
+      const groups = [...new Set(state.conversations.map((c) => c.group).filter(Boolean))].sort();
+      const fillSelect = (sel, values) => {
+        const current = sel.value;
+        sel.innerHTML = '<option value="">all</option>';
+        for (const v of values) {
+          const opt = document.createElement("option");
+          opt.value = v;
+          opt.textContent = v;
+          sel.appendChild(opt);
+        }
+        if (values.includes(current)) sel.value = current;
+      };
+      fillSelect(els.filterVolume, volumes);
+      fillSelect(els.filterGroup, groups);
+    }
+
+    function applyFilter() {
+      const vol = els.filterVolume.value;
+      const grp = els.filterGroup.value;
+      const q = els.convSearch.value.trim().toLowerCase();
+      state.filtered = state.conversations.filter((c) => {
+        if (vol && c.volume !== vol) return false;
+        if (grp && c.group !== grp) return false;
+        if (q && !c.id.toLowerCase().includes(q)) return false;
+        return true;
+      });
+      // Reset current index if the current conversation is no longer in view
+      state.currentIdx = state.currentId
+        ? state.filtered.findIndex((c) => c.id === state.currentId)
+        : -1;
+      renderConversationSelect();
+    }
+
+    function renderConversationSelect() {
+      els.convSelect.innerHTML = "";
+      const placeholder = document.createElement("option");
+      placeholder.value = "";
+      placeholder.textContent = state.filtered.length
+        ? `Select a conversation (${state.filtered.length} matching)`
+        : "No conversations match filter";
+      els.convSelect.appendChild(placeholder);
+      state.filtered.forEach((c, i) => {
+        const opt = document.createElement("option");
+        opt.value = c.id;
+        opt.dataset.volume = c.volume;
+        const dur = c.durationSeconds ? ` · ${c.durationSeconds.toFixed(0)}s` : "";
+        const tag = c.group ? ` [${c.group}]` : "";
+        opt.textContent = `${i + 1}. ${c.id}${tag}${dur}${c.hasAnnotation ? " ✓" : ""}`;
+        els.convSelect.appendChild(opt);
+      });
+      if (state.currentId) els.convSelect.value = state.currentId;
+      els.convIdDisplay.value = els.convSelect.value || "";
+    }
+
+    function updateProgress() {
+      const scope = state.filtered.length ? state.filtered : state.conversations;
+      const done = scope.filter((c) => c.hasAnnotation).length;
+      const total = scope.length;
+      els.progressFill.style.width = total ? `${(100 * done) / total}%` : "0%";
+      const scopeLabel = state.filtered.length && state.filtered.length !== state.conversations.length
+        ? " (filtered)" : "";
+      els.progressText.textContent = `${done} / ${total} annotated${scopeLabel}`;
+    }
+
+    let _loadInFlight = false;
+    async function loadConversation(id, volume) {
+      // Reject overlapping calls so a fast double-click can't interleave two
+      // load flows and corrupt state (the second call would see partially-set
+      // intervals from the first).
+      if (_loadInFlight) {
+        setStatus("Already loading — wait for current load to finish", "");
+        return;
+      }
+      hideErrorDialog();
+      if (!volume) {
+        const meta = state.conversations.find((c) => c.id === id);
+        volume = meta?.volume;
+      }
+      if (!volume) {
+        setStatus(`No volume for ${id}`, "error");
+        return;
+      }
+      _loadInFlight = true;
+      try {
+        await _loadConversationImpl(id, volume);
+      } finally {
+        _loadInFlight = false;
+      }
+    }
+
+    async function _loadConversationImpl(id, volume) {
+      showLoading(`Loading ${id.slice(0, 16)}…\nFetching intervals + transcripts…`);
+      setStatus("Loading…");
+      let data;
+      try {
+        const res = await apiFetch(`${API}/conversation/${encodeURIComponent(id)}?volume=${encodeURIComponent(volume)}&${annotatorQS}`);
+        data = await res.json();
+      } catch {
+        // apiFetch already showed the reload dialog. Bail out of the load flow.
+        return;
+      }
+      state.currentId = id;
+      state.currentVolume = volume;
+      state.currentIdx = state.filtered.findIndex((c) => c.id === id);
+
+      // Populate the three interval lists from upstream / source / local.
+      state.intervals.gt  = (data.groundTruth?.intervals ?? []).map(toInterval);
+      state.intervals.src = (data.sourceTranscript?.interval_transcripts ?? []).map(toInterval);
+      // Source transcript is rendered as one read-only text blob on the left.
+      els.sourceBlob.textContent = data.sourceTranscript?.text ?? "";
+
+      // intervals.edit precedence: local save > upstream human > ground truth
+      // Local save is now a flat array of {start, end, transcript}.
+      const upstreamHuman = data.humanAnnotation?.intervals ?? [];
+      const upstreamTurns = data.turnTranscripts?.turns ?? [];
+      const local = data.annotation;   // SavedAnnotation | null — [{start, end, transcript}]
+      const seedItems =
+        Array.isArray(local) && local.length
+          ? local.map((t) => ({ start: t.start, end: t.end, text: t.transcript ?? "" }))
+          : upstreamHuman.length || upstreamTurns.length
+            ? mergeIntervalsAndTurns(upstreamHuman, upstreamTurns)
+            : seedFromGroundTruth(state.intervals.gt, state.intervals.src);
+      state.intervals.edit = seedItems.map(toInterval);
+
+      const audioPath = `${API}/${data.audioUrl}`;
+      els.loadingText.textContent = `Loading audio… (decoding waveform)`;
+      try {
+        await initWaveSurfer(audioPath);
+      } catch (err) {
+        showReloadDialog(`Audio failed: ${err?.message || err}`);
+        return;
+      }
+      renderMirrors();
+      activeTurnIdx = -1;
+      state.selectedId = null;
+      clearPendingStart();
+      renderAlignedTurns();
+      hideLoading();
+      setStatus(
+        Array.isArray(local) && local.length ? "Loaded saved annotation" :
+        (upstreamHuman.length || upstreamTurns.length) ? "Loaded upstream human annotation" :
+        "Seeded from ground truth",
+        "success",
+      );
+    }
+
+    // ─── interval helpers ───
+    let _idCounter = 0;
+    function newIntervalId(suffix) {
+      return `h-${Math.random().toString(36).slice(2, 9)}-${suffix ?? ++_idCounter}`;
+    }
+
+    // Canonical interval shape: {start, end, [label], [text], [_id]}.
+    // Different sources use different field names (transcript vs text); normalize here.
+    function toInterval(x) {
+      const out = { start: Number(x.start), end: Number(x.end) };
+      if (x.label !== undefined) out.label = String(x.label);
+      const text = x.text ?? x.transcript;
+      if (text !== undefined) out.text = String(text);
+      if (x._id) out._id = x._id;
+      return out;
+    }
+
+    // Combine an intervals[] list (timing+label) with a turns[] list (timing+text)
+    // by time-range overlap. Used when seeding state.intervals.edit from upstream
+    // or local save (which split the data the same way the upstream API does).
+    function mergeIntervalsAndTurns(intervals = [], turns = []) {
+      const TOL = 0.05;
+      const used = new Set();
+      const out = [];
+      for (const iv of intervals) {
+        const turn = turns.find((t, i) =>
+          !used.has(i) && Math.abs(t.start - iv.start) <= TOL && Math.abs(t.end - iv.end) <= TOL
+        );
+        if (turn) used.add(turns.indexOf(turn));
+        out.push({ start: iv.start, end: iv.end, text: turn?.text ?? "" });
+      }
+      // turns that didn't pair with any interval get their own entries
+      for (let i = 0; i < turns.length; i++) {
+        if (used.has(i)) continue;
+        out.push({ start: turns[i].start, end: turns[i].end, text: turns[i].text ?? "" });
+      }
+      return out.sort((a, b) => a.start - b.start);
+    }
+
+    // For each ground-truth interval, build an editable entry whose text is the
+    // concatenation of every source-transcript ASR phrase that overlaps it in
+    // time. ASR text is kept verbatim — parentheticals like "(music)" are not
+    // stripped, since the labeler needs to see what the ASR actually produced.
+    function seedFromGroundTruth(gt = [], asrPhrases = []) {
+      return gt
+        .map(({ start, end }) => {
+          const text = asrPhrases
+            .filter((p) => p.end > start && p.start < end)
+            .sort((a, b) => a.start - b.start)
+            .map((p) => p.text ?? "")
+            .join(" ")
+            .trim();
+          return { start, end, text };
+        })
+        .sort((a, b) => a.start - b.start);
+    }
+
+    async function initWaveSurfer(audioUrl) {
+      if (state.ws) {
+        // Suppress syncFromRegions during teardown. destroy() fires synchronous
+        // region-removed events on the OLD regions plugin; without this guard
+        // they reach our handler and wipe state.intervals.edit just as the new
+        // conversation is being seeded — the "second-load shows no bars" bug.
+        const prevWs = state.ws;
+        state.ws = null;          // detach refs first so handlers no-op
+        state.regions = null;
+        state._hydrating = true;
+        try { prevWs.destroy(); } finally { state._hydrating = false; }
+      }
+      els.waveform.innerHTML = "";
+
+      // Single playback engine: the <audio> element. Wavesurfer is a viz layer
+      // that shares this element via `media`. Pass `url` to wavesurfer (NOT
+      // a manual els.audio.src assignment) so wavesurfer fetches the audio
+      // exactly once, creates a blob URL, and assigns it to the media element.
+      // Setting audio.src manually triggers a parallel browser fetch that gets
+      // canceled when wavesurfer overwrites src — surfacing a false audio
+      // error and producing redundant network traffic.
+
+      const regions = RegionsPlugin.create();
+      const timeline = TimelinePlugin.create({
+        height: 18,
+        timeInterval: 5,
+        primaryLabelInterval: 30,
+        style: "font-size: 10px; color: #6e7681; font-family: ui-monospace, monospace;",
+      });
+      const ws = WaveSurfer.create({
+        container: els.waveform,
+        height: 96,
+        waveColor: "#4ad8a4",       // mint teal — the signal
+        progressColor: "#6b95ff",   // blue — past playhead
+        cursorColor: "#ff5d5d",     // hot red — current position
+        cursorWidth: 1,
+        dragToSeek: false,          // drag pans the view; tap-click still seeks
+        media: els.audio,           // share the <audio> element for playback
+        url: audioUrl,              // wavesurfer fetches ONCE, blob → media.src
+        plugins: [regions, timeline],
+      });
+      state.ws = ws;
+      state.regions = regions;
+
+      // Overlap is ALLOWED — upstream data sometimes has overlapping intervals
+      // (e.g. ground truth covering a long stretch while transcript snippets sit
+      // inside it). Creation, drag, and resize all succeed without snapping.
+      regions.on("region-created", () => { syncFromRegions(); scheduleMirrors(); });
+      regions.on("region-updated", () => { syncFromRegions(); scheduleMirrors(); });
+      regions.on("region-removed", () => { syncFromRegions(); scheduleMirrors(); });
+      regions.on("region-clicked", (region, e) => {
+        e.stopPropagation();
+        state.selectedRegion = region;
+        // Seek to where the user actually clicked inside the region, not its
+        // start — labelers click a specific spot on the waveform to hear that
+        // exact moment, and snapping to region.start scrubbed them back to the
+        // beginning of the interval every time.
+        const scroller = state.ws?.getWrapper?.()?.parentElement;
+        let t = region.start;
+        if (scroller && state.duration) {
+          const rect = scroller.getBoundingClientRect();
+          const x = e.clientX - rect.left + scroller.scrollLeft;
+          const pxps = effectivePxps();
+          if (pxps) t = Math.max(0, Math.min(state.duration, x / pxps));
+        }
+        els.audio.currentTime = t;
+        setSelection(region.id);
+        scrollTurnToTop(region.id);
+      });
+
+      // pxps lives in state; the ONLY place it changes is here.
+      ws.on("zoom", (pxps) => { state.pxps = pxps || fitPxps(); scheduleMirrors(); });
+      ws.on("scroll", () => scheduleMirrorScroll());
+      // No "redraw" listener — wavesurfer fires it many times during init/zoom;
+      // mirror state is already covered by the "zoom" event.
+
+      // Playhead synced across all rows by listening directly to the shared
+      // audio element + a requestAnimationFrame loop during playback for smoothness.
+      // The `audio` event listeners are bound once (outside this fn) — see below.
+
+      // Drag-selection on the waveform is intentionally disabled. New intervals
+      // are created only via drag on the Human Annotation row (or the A key).
+
+      // Wait for the audio to actually be fetched + decoded before resolving.
+      // Hydrate editable regions here so they only appear once playback is ready.
+      await new Promise((resolve, reject) => {
+        ws.once("ready", (duration) => {
+          state.duration = duration;
+          state.pxps = fitPxps();
+          // Hydrate wavesurfer regions from state.intervals.edit. Assign each
+          // item an _id that matches the wavesurfer region id so syncFromRegions
+          // can reconcile them later. _hydrating flag suppresses sync during the
+          // loop, so multiple region-created events don't clobber text we set up.
+          state.intervals.edit = state.intervals.edit.map((t, i) => ({
+            ...t,
+            _id: t._id || newIntervalId(i),
+          }));
+          state._hydrating = true;
+          for (const t of state.intervals.edit) {
+            regions.addRegion({
+              id: t._id,
+              start: t.start,
+              end: Math.min(t.end, duration),
+              color: "rgba(210, 153, 34, 0.3)",
+              drag: true,
+              resize: true,
+            });
+          }
+          state._hydrating = false;
+          renderAlignedTurns();
+          renderMirrors();
+          attachWaveformPan();
+          resolve();
+        });
+        ws.once("error", (err) => reject(err instanceof Error ? err : new Error(String(err))));
+      });
+    }
+
+    // Single source of truth for editable annotations is state.intervals.edit.
+    // Each turn carries _id matching its wavesurfer region id; that's how text
+    // is preserved across drag/resize and how new regions show up as new turns.
+    function syncFromRegions() {
+      if (!state.regions || state._hydrating) return;
+      const all = state.regions.getRegions()
+        .filter((r) => !r.id || !r.id.startsWith("gt-"))
+        .slice()
+        .sort((a, b) => a.start - b.start);
+      const textById = new Map(state.intervals.edit.map((t) => [t._id, t.text]));
+      state.intervals.edit = all.map((r) => ({
+        start: r.start,
+        end: r.end,
+        text: textById.get(r.id) ?? "",
+        _id: r.id,
+      }));
+      activeTurnIdx = -1;
+      renderAlignedTurns();
+      renderMirrors();
+    }
+
+    // (pxps lives in state and is updated only by the wavesurfer "zoom" event;
+    //  reading it from wavesurfer's DOM was the source of the flicker bug.)
+
+    // ─── VIEW: bars on a horizontal lane ───
+    // Renders an interval list as colored bars on a time-axis track.
+    // listName picks the data; the CSS class .bar-<kind> styles it.
+    // Skips non-region children (like the drag-preview overlay).
+    function renderBars(listName, trackEl) {
+      const items = state.intervals[listName] || [];
+      const pxps = effectivePxps();
+      const dur = state.duration || 1;
+      const trackWidth = Math.max(pxps * dur, trackEl.parentElement.clientWidth);
+      trackEl.style.width = `${trackWidth}px`;
+      // Snapshot only the region children (preview/cursor etc. live alongside).
+      const regions = [];
+      for (const c of trackEl.children) {
+        if (c.classList.contains("mirror-region")) regions.push(c);
+      }
+      for (let i = 0; i < items.length; i++) {
+        const iv = items[i];
+        let div = regions[i];
+        if (!div) {
+          div = document.createElement("div");
+          div.className = `mirror-region ${listName === "gt" ? "gt" : "human"}`;
+          if (listName === "edit") div.dataset.editId = iv._id || "";
+          trackEl.appendChild(div);
+          regions.push(div);
+        } else if (listName === "edit") {
+          div.dataset.editId = iv._id || "";
+        }
+        div.style.left = `${iv.start * pxps}px`;
+        div.style.width = `${Math.max(2, (iv.end - iv.start) * pxps)}px`;
+        const tag = iv.label ? ` ${iv.label}` : "";
+        div.textContent = `${iv.start.toFixed(2)}–${iv.end.toFixed(2)}${tag}`;
+        if (listName === "edit") {
+          div.classList.toggle("selected", !!iv._id && iv._id === state.selectedId);
+        }
+      }
+      while (regions.length > items.length) regions.pop().remove();
+    }
+
+    // The two mirror rows are just two calls to the same view.
+    function renderMirrors() {
+      renderBars("gt", els.gtTrack);
+      renderBars("edit", els.humanTrack);
+      syncMirrorScroll();
+    }
+
+    function syncMirrorScroll() {
+      const scroller = state.ws?.getWrapper?.()?.parentElement;
+      const sl = scroller?.scrollLeft ?? 0;
+      els.gtRow.scrollLeft = sl;
+      els.humanRow.scrollLeft = sl;
+      updateCursors();
+    }
+
+    // Wire drag-to-pan on the wavesurfer waveform — cursor grabs and the view
+    // pans horizontally with the mouse. A quick click (no drag) still seeks via
+    // wavesurfer's own click handler; we only suppress click after an actual drag.
+    function attachWaveformPan() {
+      const scroller = state.ws?.getWrapper?.()?.parentElement;
+      if (!scroller || scroller.dataset.panWired) return;
+      scroller.dataset.panWired = "1";
+      let s = null;          // { startX, startScroll, moved }
+      const DRAG_THRESHOLD = 4;
+      scroller.addEventListener("pointerdown", (e) => {
+        if (e.button !== 0) return;
+        // Don't grab when interacting with a wavesurfer region (those have
+        // their own drag/resize handlers from the regions plugin). Wavesurfer
+        // 7 sets the region's part to "region <id>" (e.g. "region region-abc"),
+        // so we match the "region" token rather than the exact attribute —
+        // an exact `[part='region']` never matched and the pan handler was
+        // scrolling the wrapper concurrently with the region resize, capping
+        // the effective edge movement to whatever fit in the viewport.
+        if (e.target.closest("[part~='region']")) return;
+        s = { startX: e.clientX, startScroll: scroller.scrollLeft, moved: false };
+      });
+      scroller.addEventListener("pointermove", (e) => {
+        if (!s) return;
+        const dx = e.clientX - s.startX;
+        if (Math.abs(dx) >= DRAG_THRESHOLD) {
+          if (!s.moved) {
+            s.moved = true;
+            els.waveform.classList.add("panning");
+            try { scroller.setPointerCapture(e.pointerId); } catch {}
+          }
+          scroller.scrollLeft = s.startScroll - dx;
+          e.preventDefault();
+        }
+      });
+      const endPan = (e) => {
+        if (!s) return;
+        const moved = s.moved;
+        s = null;
+        els.waveform.classList.remove("panning");
+        try { scroller.releasePointerCapture(e.pointerId); } catch {}
+        if (moved) {
+          // Eat the click that would otherwise fire from wavesurfer's seek handler.
+          const swallow = (ev) => { ev.stopImmediatePropagation(); ev.preventDefault(); };
+          scroller.addEventListener("click", swallow, { capture: true, once: true });
+        }
+      };
+      scroller.addEventListener("pointerup", endPan);
+      scroller.addEventListener("pointercancel", endPan);
+    }
+
+
+    // rAF debouncers — collapse rapid zoom/redraw bursts into one paint.
+    let mirrorRafId = null;
+    function scheduleMirrors() {
+      if (mirrorRafId != null) return;
+      mirrorRafId = requestAnimationFrame(() => {
+        mirrorRafId = null;
+        renderMirrors();
+      });
+    }
+    let scrollRafId = null;
+    function scheduleMirrorScroll() {
+      if (scrollRafId != null) return;
+      scrollRafId = requestAnimationFrame(() => {
+        scrollRafId = null;
+        syncMirrorScroll();
+      });
+    }
+
+    function updateCursors() {
+      if (!state.duration) return;
+      const t = els.audio.currentTime || 0;
+      const pxps = effectivePxps();
+      const x = t * pxps;
+      els.gtCursor.style.transform = `translateX(${x}px)`;
+      els.humanCursor.style.transform = `translateX(${x}px)`;
+      updatePendingMarker();
+      updateActiveTurn();
+    }
+
+    // Smooth cursor animation: requestAnimationFrame while playing.
+    let cursorRaf = null;
+    function startCursorLoop() {
+      if (cursorRaf != null) return;
+      const tick = () => {
+        updateCursors();
+        if (!els.audio.paused && !els.audio.ended) {
+          cursorRaf = requestAnimationFrame(tick);
+        } else {
+          cursorRaf = null;
+        }
+      };
+      cursorRaf = requestAnimationFrame(tick);
+    }
+    els.audio.addEventListener("play", startCursorLoop);
+    els.audio.addEventListener("pause", () => { updateCursors(); cursorRaf = null; });
+    els.audio.addEventListener("seeking", updateCursors);
+    els.audio.addEventListener("seeked", () => {
+      updateCursors();
+      // Any seek (waveform click, native audio progress click, scrub, J/L)
+      // selects the nearest annotation interval and centers its card in the
+      // panel — so the labeler sees where they landed without scrolling.
+      selectNearestToPlayhead();
+    });
+    els.audio.addEventListener("timeupdate", updateCursors);
+    els.audio.addEventListener("loadedmetadata", () => {
+      if (!state.duration && els.audio.duration) {
+        state.duration = els.audio.duration;
+      }
+      updateCursors();
+    });
+    els.audio.addEventListener("error", () => {
+      const err = els.audio.error;
+      // Code 1 = MEDIA_ERR_ABORTED — fires when src is swapped (e.g. wavesurfer
+      // assigning a blob URL, or switching conversations). Not a real failure.
+      if (!err || err.code === 1) return;
+      const msg = err.message || `audio error code ${err.code}`;
+      if (els.audio.src) showReloadDialog(`Failed to load audio: ${msg}`);
+    });
+
+    function seekFromMirror(e, rowEl) {
+      if (!state.duration) return;
+      const pxps = effectivePxps();
+      if (!pxps) return;
+      const rect = rowEl.getBoundingClientRect();
+      const x = e.clientX - rect.left + rowEl.scrollLeft;
+      const t = Math.max(0, Math.min(state.duration, x / pxps));
+      els.audio.currentTime = t;
+    }
+
+    // Scroll the editable card matching a given interval (by region/turn _id,
+    // or by current time) so it sits at the top of the edit-cards panel.
+    function scrollTurnToTop(idOrTime) {
+      const edit = state.intervals.edit;
+      let editIdx = -1;
+      if (typeof idOrTime === "string") {
+        editIdx = edit.findIndex((e) => e._id === idOrTime);
+      } else {
+        const t = idOrTime;
+        editIdx = edit.findIndex((e) => t >= e.start && t <= e.end);
+        if (editIdx < 0) {
+          let bestDist = Infinity;
+          for (let i = 0; i < edit.length; i++) {
+            const dist = Math.abs(edit[i].start - t);
+            if (dist < bestDist) { bestDist = dist; editIdx = i; }
+          }
+        }
+      }
+      if (editIdx < 0) return;
+      const card = els.editCards.querySelector(`[data-edit-idx="${editIdx}"]`);
+      // One call, one intent: center the card. The browser walks every
+      // scrollable ancestor and scrolls each as needed — internal panel scroll
+      // and page scroll both handled, no edge-case branching.
+      card?.scrollIntoView({ block: "center", behavior: "smooth" });
+    }
+
+    // Render the editable per-turn cards on the right. Source transcript on
+    // the left is a static text blob set once at load time — no alignment.
+    function renderAlignedTurns() {
+      const edit = state.intervals.edit;
+      const n = edit.length;
+      const cards = Array.from(els.editCards.children);
+      while (cards.length < n) {
+        const card = makeTurnCard();
+        els.editCards.appendChild(card);
+        cards.push(card);
+      }
+      while (cards.length > n) {
+        els.editCards.removeChild(cards.pop());
+      }
+      for (let i = 0; i < n; i++) {
+        fillCard(cards[i], i, edit[i]);
+      }
+    }
+
+    function makeTurnCard() {
+      const card = document.createElement("div");
+      card.className = "turn-card edit";
+      card.innerHTML = `<div class="turn-time"></div>
+        <div class="edit-row"><textarea></textarea><button class="del-btn" title="Remove turn">×</button></div>`;
+      const ta = card.querySelector("textarea");
+      const del = card.querySelector(".del-btn");
+      ta.addEventListener("input", () => {
+        const editIdx = +card.dataset.editIdx;
+        if (editIdx >= 0 && state.intervals.edit[editIdx]) {
+          state.intervals.edit[editIdx].text = ta.value;
+        }
+        autosizeTextarea(ta);
+      });
+      del.addEventListener("click", (ev) => {
+        ev.stopPropagation();
+        const editIdx = +card.dataset.editIdx;
+        const turn = state.intervals.edit[editIdx];
+        if (!turn) return;
+        const r = state.regions?.getRegions().find((r) => r.id === turn._id);
+        if (r) r.remove();
+        else { state.intervals.edit.splice(editIdx, 1); renderAlignedTurns(); }
+      });
+      card.addEventListener("click", (ev) => {
+        if (ev.target.tagName === "TEXTAREA" || ev.target.tagName === "BUTTON") return;
+        const editIdx = +card.dataset.editIdx;
+        const turn = editIdx >= 0 ? state.intervals.edit[editIdx] : null;
+        if (!turn) return;
+        if (state.duration) els.audio.currentTime = turn.start;
+        setSelection(turn._id);
+      });
+      return card;
+    }
+
+    function fillCard(card, editIdx, turn) {
+      card.dataset.editIdx = String(editIdx);
+      card.children[0].textContent = `Turn ${editIdx + 1}  ${turn.start.toFixed(2)}s – ${turn.end.toFixed(2)}s`;
+      const ta = card.querySelector("textarea");
+      if (document.activeElement !== ta) ta.value = turn.text ?? "";
+      ta.disabled = false;
+      card.querySelector(".del-btn").disabled = false;
+      autosizeTextarea(ta);
+    }
+
+    function autosizeTextarea(ta) {
+      ta.style.height = "auto";
+      ta.style.height = ta.scrollHeight + "px";
+    }
+
+    // Active highlight: find the editable card whose interval contains
+    // currentTime, mark it active, and scroll it into view.
+    let activeTurnIdx = -1;
+    function updateActiveTurn() {
+      const edit = state.intervals.edit;
+      if (!edit.length) return;
+      const t = els.audio.currentTime || 0;
+      let idx = -1;
+      for (let i = 0; i < edit.length; i++) {
+        if (t >= edit[i].start && t <= edit[i].end) { idx = i; break; }
+      }
+      if (idx === activeTurnIdx) return;
+      const setActive = (i, on) => {
+        if (i < 0) return;
+        const card = els.editCards.querySelector(`[data-edit-idx="${i}"]`);
+        if (!card) return;
+        card.classList.toggle("active", on);
+        if (on) card.scrollIntoView({ block: "nearest", behavior: "smooth" });
+      };
+      setActive(activeTurnIdx, false);
+      setActive(idx, true);
+      activeTurnIdx = idx;
+    }
+
+    function escapeHtml(s) {
+      return String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+    }
+
+    async function save() {
+      if (!state.currentId) return false;
+      setStatus("Saving…");
+      // Saved file format: flat array of {start, end, transcript}.
+      // Filename on Drive embeds conv id + iso timestamp (append-only).
+      const payload = state.intervals.edit.map((t) => ({
+        start: t.start,
+        end: t.end,
+        transcript: t.text ?? "",
+      }));
+      let res;
+      try {
+        res = await fetch(`${API}/annotation/${encodeURIComponent(state.currentId)}?${annotatorQS}`, {
+          method: "PUT",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+      } catch (err) {
+        showToast(`Save failed: ${err.message || err}`);
+        setStatus("Save failed", "error");
+        return false;
+      }
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        showToast(`Save failed: ${body.error || res.statusText}`);
+        setStatus("Save failed", "error");
+        return false;
+      }
+      const data = await res.json();
+      // Mark this conversation as annotated locally so the dropdown updates.
+      const meta = state.conversations.find((c) => c.id === state.currentId);
+      if (meta) meta.hasAnnotation = true;
+      renderConversationSelect();
+      updateProgress();
+      setStatus(`Saved at ${new Date(data.savedAt).toLocaleTimeString()}`, "success");
+      return true;
+    }
+
+    function nextConversation() {
+      const nextIdx = state.currentIdx + 1;
+      if (nextIdx < state.filtered.length) {
+        const next = state.filtered[nextIdx];
+        els.convSelect.value = next.id;
+        els.convIdDisplay.value = next.id;
+        loadConversation(next.id, next.volume);
+      } else {
+        setStatus("End of filtered list", "");
+      }
+    }
+
+    // wire UI
+    function showSelectedId(id) {
+      els.convIdDisplay.value = id || "";
+    }
+    els.convIdDisplay.addEventListener("focus", (e) => e.target.select());
+    els.convIdDisplay.addEventListener("click", (e) => e.target.select());
+    els.convSelect.addEventListener("change", () => {
+      const id = els.convSelect.value;
+      if (!id) { showSelectedId(""); return; }
+      const meta = state.filtered.find((c) => c.id === id);
+      showSelectedId(id);
+      setStatus(`Selected ${id.slice(0, 16)}… — click Load to fetch`, "");
+    });
+    els.jumpBtn.addEventListener("click", () => {
+      const n = parseInt(els.jumpInput.value, 10);
+      if (!n || n < 1 || n > state.filtered.length) return;
+      const meta = state.filtered[n - 1];
+      els.convSelect.value = meta.id;
+      showSelectedId(meta.id);
+      setStatus(`Selected #${n} (${meta.id.slice(0, 16)}…) — click Load`, "");
+    });
+    els.loadBtn.addEventListener("click", () => {
+      const id = els.convSelect.value;
+      if (!id) { setStatus("Pick a conversation first", "error"); return; }
+      const meta = state.filtered.find((c) => c.id === id);
+      if (!meta) return;
+      loadConversation(meta.id, meta.volume);
+    });
+    els.filterVolume.addEventListener("change", () => { applyFilter(); updateProgress(); });
+    els.filterGroup.addEventListener("change", () => { applyFilter(); updateProgress(); });
+    els.convSearch.addEventListener("input", () => { applyFilter(); updateProgress(); });
+    els.saveBtn.addEventListener("click", () => save());
+    els.saveNextBtn.addEventListener("click", async () => { if (await save()) nextConversation(); });
+    els.nextBtn.addEventListener("click", nextConversation);
+// Insert a 1-second interval at the current playhead position, then select it.
+    // Overlap with existing intervals is allowed (input data may already overlap).
+    function addIntervalAtPlayhead() {
+      if (!state.duration || !state.regions) {
+        setStatus("Load a conversation first", "error");
+        return;
+      }
+      const start = Math.max(0, Math.min(state.duration - 0.05, els.audio.currentTime || 0));
+      const end   = Math.min(state.duration, start + 1.0);
+      if (end - start < 0.05) {
+        setStatus("Not enough room at playhead — move earlier", "error");
+        return;
+      }
+      const id = newIntervalId();
+      state.regions.addRegion({
+        id, start, end,
+        color: "rgba(210, 153, 34, 0.3)", drag: true, resize: true,
+      });
+      requestAnimationFrame(() => { setSelection(id); scrollTurnToTop(id); });
+      setStatus(`Added interval ${start.toFixed(2)}s – ${end.toFixed(2)}s`, "success");
+    }
+    els.addBtn.addEventListener("click", addIntervalAtPlayhead);
+    els.delBtn.addEventListener("click", () => {
+      // Resolve the region to delete from the GLOBAL selection (state.selectedId)
+      // so it works no matter where the user clicked: waveform, mirror bar, or
+      // transcript card. Falls back to state.selectedRegion for legacy.
+      let r = null;
+      if (state.selectedId) {
+        r = state.regions?.getRegions().find((x) => x.id === state.selectedId) || null;
+      }
+      r = r || state.selectedRegion;
+      if (r) {
+        r.remove();
+        state.selectedRegion = null;
+        setSelection(null);
+      } else {
+        setStatus("No interval selected", "error");
+      }
+    });
+
+    // Batch zoom requests: collapse multiple zoom intents within one frame
+    // into a single wavesurfer.zoom() call (which is the expensive redraw).
+    let pendingZoom = null;
+    let zoomRafId = null;
+    function applyZoom(value) {
+      pendingZoom = value;
+      if (zoomRafId != null) return;
+      zoomRafId = requestAnimationFrame(() => {
+        zoomRafId = null;
+        if (pendingZoom != null && state.ws) state.ws.zoom(pendingZoom);
+        pendingZoom = null;
+      });
+    }
+    function zoomBy(factor) {
+      if (!state.ws || !state.duration) return;
+      const minFit = els.waveform.clientWidth / Math.max(state.duration, 1);
+      const cur = pendingZoom ?? (state.ws.options.minPxPerSec || minFit);
+      const next = Math.max(minFit, Math.min(500, cur * factor));
+      applyZoom(next);
+    }
+    els.zoomIn.addEventListener("click", () => zoomBy(1.25));
+    els.zoomOut.addEventListener("click", () => zoomBy(1 / 1.25));
+    els.zoomReset.addEventListener("click", () => applyZoom(0));
+
+    // Skip N seconds in the audio, clamped to [0, duration]. Used by hotkeys
+    // and the floating transport buttons so labelers don't need to scroll back
+    // up to the <audio> control just to nudge playback.
+    const SKIP_SECONDS = 3;
+    function skipAudio(deltaSec) {
+      if (!els.audio || !state.duration) return;
+      const t = (els.audio.currentTime || 0) + deltaSec;
+      els.audio.currentTime = Math.max(0, Math.min(state.duration, t));
+    }
+
+    // ─── Keyboard interval creation (`[` start, `]` end → create + edit) ───
+    function updatePendingMarker() {
+      const el = els.pendingStartMarker;
+      if (!el) return;
+      if (state.pendingStart == null) {
+        el.style.transform = "translateX(-9999px)";
+        return;
+      }
+      el.style.transform = `translateX(${state.pendingStart * effectivePxps()}px)`;
+    }
+    function clearPendingStart() {
+      state.pendingStart = null;
+      updatePendingMarker();
+    }
+    function markIntervalStart() {
+      if (!state.duration) { setStatus("Load a conversation first", "error"); return; }
+      state.pendingStart = els.audio.currentTime || 0;
+      updatePendingMarker();
+      setStatus(`Start parked at ${state.pendingStart.toFixed(2)}s — press ] to set the end`, "");
+    }
+    function focusIntervalTextarea(id) {
+      const editIdx = state.intervals.edit.findIndex((t) => t._id === id);
+      if (editIdx < 0) return;
+      const card = els.editCards.querySelector(`[data-edit-idx="${editIdx}"]`);
+      const ta = card?.querySelector("textarea");
+      if (!ta) return;
+      ta.focus();
+      const len = ta.value.length;
+      try { ta.setSelectionRange(len, len); } catch {}
+    }
+    function commitIntervalEnd() {
+      if (!state.duration || !state.regions) { setStatus("Load a conversation first", "error"); return; }
+      if (state.pendingStart == null) { showToast("Press [ first to mark the start"); return; }
+      // Always normalize so start < end — labelers sometimes seek backwards
+      // between [ and ], and we should still create a sensible interval.
+      const a = Math.min(state.pendingStart, els.audio.currentTime || 0);
+      const b = Math.max(state.pendingStart, els.audio.currentTime || 0);
+      const start = Math.max(0, a);
+      const end = Math.min(state.duration, b);
+      if (end - start < 0.05) { showToast("Interval too short"); clearPendingStart(); return; }
+      const id = newIntervalId();
+      state.regions.addRegion({
+        id, start, end,
+        color: "rgba(210, 153, 34, 0.3)", drag: true, resize: true,
+      });
+      clearPendingStart();
+      // Wait a frame so syncFromRegions has rebuilt the card list, then focus
+      // the new textarea so the labeler can type the transcript immediately.
+      requestAnimationFrame(() => {
+        setSelection(id);
+        scrollTurnToTop(id);
+        focusIntervalTextarea(id);
+      });
+      setStatus(`Added interval ${start.toFixed(2)}s – ${end.toFixed(2)}s`, "success");
+    }
+    // Find the editable-interval index whose [start, end] contains t; if no
+    // interval contains t (e.g. playhead sits in a gap), return the closest by
+    // edge distance. Returns -1 only when there are no intervals at all.
+    function findTurnAtOrNearest(t) {
+      const edit = state.intervals.edit;
+      if (!edit.length) return -1;
+      for (let i = 0; i < edit.length; i++) {
+        if (t >= edit[i].start && t <= edit[i].end) return i;
+      }
+      let bestIdx = 0, bestDist = Infinity;
+      for (let i = 0; i < edit.length; i++) {
+        const d = t < edit[i].start ? edit[i].start - t : t - edit[i].end;
+        if (d < bestDist) { bestDist = d; bestIdx = i; }
+      }
+      return bestIdx;
+    }
+
+    // Enter in NAV → edit the interval that owns the current playhead time
+    // (not whatever happens to be "selected"). Labelers think in terms of
+    // "the box at this moment in the audio," so this is what they expect.
+    function focusTextareaAtPlayhead() {
+      const idx = findTurnAtOrNearest(els.audio.currentTime || 0);
+      if (idx < 0) return;
+      const turn = state.intervals.edit[idx];
+      if (!turn?._id) return;
+      setSelection(turn._id);
+      focusIntervalTextarea(turn._id);
+    }
+
+    // Called after any audio seek (waveform click, mirror click, J/L skip,
+    // card click). Highlights the matching turn and pulls it to the center of
+    // the panel so the labeler doesn't have to hunt for it.
+    //
+    // Preserves an existing explicit selection when the new playhead time is
+    // still inside it — otherwise a click on bar B at time t == B.start would
+    // be re-selected to neighbor A whose A.end also equals t (the `findTurn`
+    // scan returns the first interval whose range contains the time, which
+    // for adjacent/overlapping bars is the wrong one).
+    function selectNearestToPlayhead() {
+      const time = els.audio.currentTime || 0;
+      const edit = state.intervals.edit;
+      if (!edit.length) return;
+      if (state.selectedId) {
+        const cur = edit.find((iv) => iv._id === state.selectedId);
+        if (cur && time >= cur.start && time <= cur.end) {
+          scrollTurnToTop(state.selectedId);
+          return;
+        }
+      }
+      const idx = findTurnAtOrNearest(time);
+      if (idx < 0) return;
+      const turn = edit[idx];
+      if (turn?._id) {
+        setSelection(turn._id);
+        scrollTurnToTop(turn._id);
+      }
+    }
+
+    window.addEventListener("keydown", (e) => {
+      const tag = e.target.tagName;
+      // EDIT mode: textarea focused. Only Esc has special meaning (blur back
+      // to NAV). Everything else types normally — including [ ] Enter — so
+      // labelers can still type "[unintelligible]" and use newlines.
+      if (tag === "TEXTAREA") {
+        if (e.key === "Escape") { e.preventDefault(); e.target.blur(); }
+        return;
+      }
+      // Sidebar inputs / selects still own their own keys.
+      if (tag === "INPUT" || tag === "SELECT") return;
+      // NAV mode below.
+      if (e.code === "Space") { e.preventDefault(); state.ws?.playPause(); }
+      else if (e.key === "a" || e.key === "A") { e.preventDefault(); addIntervalAtPlayhead(); }
+      else if (e.key === "j" || e.key === "J") { e.preventDefault(); skipAudio(-SKIP_SECONDS); }
+      else if (e.key === "k" || e.key === "K") { e.preventDefault(); state.ws?.playPause(); }
+      else if (e.key === "l" || e.key === "L") { e.preventDefault(); skipAudio(SKIP_SECONDS); }
+      else if (e.key === "[") { e.preventDefault(); markIntervalStart(); }
+      else if (e.key === "]") { e.preventDefault(); commitIntervalEnd(); }
+      // Only hijack plain Enter when nothing actionable is focused — otherwise
+      // a focused button or link should still activate on Enter as the browser
+      // would normally do.
+      else if (e.key === "Enter" && (e.target === document.body || e.target === document.documentElement)) {
+        e.preventDefault();
+        focusTextareaAtPlayhead();
+      }
+      else if (e.key === "Escape") { setSelection(null); clearPendingStart(); }
+      else if (e.key === "Delete" || e.key === "Backspace") {
+        // Delete the selected region (by id) — falls back to old selectedRegion ref.
+        let r = null;
+        if (state.selectedId) {
+          r = state.regions?.getRegions().find((x) => x.id === state.selectedId) || null;
+        }
+        r = r || state.selectedRegion;
+        if (r) { r.remove(); state.selectedRegion = null; setSelection(null); }
+      }
+      else if (e.key === "ArrowRight") nextConversation();
+      else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s") { e.preventDefault(); save(); }
+    });
+
+    window.addEventListener("resize", () => {
+      if (state.ws) { renderMirrors(); }
+    });
+
+    // Ground Truth row is read-only: just seek on click.
+    els.gtRow.addEventListener("click", (e) => seekFromMirror(e, els.gtRow));
+
+    // Human Annotation row is interactive:
+    //   • click on existing bar → seek + scroll matching turn to top
+    //   • drag interior of bar  → move whole interval
+    //   • drag near bar edge    → resize that edge (left edge = start, right = end)
+    //   • drag on empty area    → create a new interval (region + turn)
+    //   • click on empty area   → seek
+    // Move/resize updates the wavesurfer region directly; the region-updated
+    // event then re-renders the mirror, keeping both rows in sync.
+    (function wireHumanRow() {
+      const DRAG_THRESHOLD = 4;        // px before a pointermove counts as a drag
+      const EDGE_HANDLE = 8;           // px from bar edge that counts as a resize grab
+      const MIN_LEN = 0.01;            // seconds
+      let drag = null;                 // { type: 'create' | 'bar', ... }
+      const xFromEvent = (e) => {
+        const rect = els.humanRow.getBoundingClientRect();
+        return e.clientX - rect.left + els.humanRow.scrollLeft;
+      };
+      const isHumanBar = (el) =>
+        el?.classList?.contains("mirror-region") && el.classList.contains("human") ? el : null;
+      const modeForBar = (bar, clientX) => {
+        const r = bar.getBoundingClientRect();
+        const off = clientX - r.left;
+        if (off < EDGE_HANDLE) return "resize-start";
+        if (off > r.width - EDGE_HANDLE) return "resize-end";
+        return "move";
+      };
+
+      els.humanRow.addEventListener("pointerdown", (e) => {
+        if (e.button !== 0) return;
+        const bar = isHumanBar(e.target);
+        if (bar) {
+          const editId = bar.dataset.editId;
+          const turn = state.intervals.edit.find((t) => t._id === editId);
+          if (!turn) return;
+          e.stopPropagation();
+          const mode = modeForBar(bar, e.clientX);
+          drag = {
+            type: "bar",
+            mode,
+            editId,
+            origStart: turn.start,
+            origEnd: turn.end,
+            startX: xFromEvent(e),
+            moved: false,
+          };
+          bar.style.cursor = mode === "move" ? "grabbing" : "ew-resize";
+          try { els.humanRow.setPointerCapture(e.pointerId); } catch {}
+          return;
+        }
+        // Empty area → start a drag-to-create.
+        if (!state.duration || !effectivePxps()) return;
+        drag = { type: "create", startX: xFromEvent(e), currentX: xFromEvent(e), moved: false };
+        try { els.humanRow.setPointerCapture(e.pointerId); } catch {}
+      });
+
+      els.humanRow.addEventListener("pointermove", (e) => {
+        // No active drag → hint cursor when hovering a bar so the user knows
+        // where the resize grabbers live.
+        if (!drag) {
+          if (e.buttons) return;
+          const bar = isHumanBar(e.target);
+          if (bar) bar.style.cursor = modeForBar(bar, e.clientX) === "move" ? "grab" : "ew-resize";
+          return;
+        }
+
+        if (drag.type === "bar") {
+          const curX = xFromEvent(e);
+          if (Math.abs(curX - drag.startX) >= DRAG_THRESHOLD) drag.moved = true;
+          if (!drag.moved) return;
+          const pxps = effectivePxps();
+          if (!pxps) return;
+          const dt = (curX - drag.startX) / pxps;
+          const region = state.regions?.getRegions?.().find((r) => r.id === drag.editId);
+          if (!region) return;
+          const dur = state.duration || drag.origEnd;
+          if (drag.mode === "move") {
+            const len = drag.origEnd - drag.origStart;
+            const newStart = Math.max(0, Math.min(dur - len, drag.origStart + dt));
+            region.setOptions({ start: newStart, end: newStart + len });
+          } else if (drag.mode === "resize-start") {
+            const newStart = Math.max(0, Math.min(drag.origEnd - MIN_LEN, drag.origStart + dt));
+            region.setOptions({ start: newStart });
+          } else if (drag.mode === "resize-end") {
+            const newEnd = Math.max(drag.origStart + MIN_LEN, Math.min(dur, drag.origEnd + dt));
+            region.setOptions({ end: newEnd });
+          }
+          return;
+        }
+
+        // Create-mode drag — show live preview rectangle.
+        drag.currentX = xFromEvent(e);
+        if (Math.abs(drag.currentX - drag.startX) >= DRAG_THRESHOLD) drag.moved = true;
+        const a = Math.min(drag.startX, drag.currentX);
+        const b = Math.max(drag.startX, drag.currentX);
+        els.humanPreview.style.left = `${a}px`;
+        els.humanPreview.style.width = `${Math.max(2, b - a)}px`;
+        els.humanPreview.hidden = !drag.moved;
+      });
+
+      const endDrag = (e) => {
+        if (!drag) return;
+        try { els.humanRow.releasePointerCapture(e.pointerId); } catch {}
+        const d = drag;
+        drag = null;
+
+        if (d.type === "bar") {
+          // Clear the inline cursor we set during drag so hover styling takes over again.
+          const bar = els.humanRow.querySelector(`.mirror-region.human[data-edit-id="${d.editId}"]`);
+          if (bar) bar.style.cursor = "";
+          if (d.moved) {
+            syncFromRegions();
+            scheduleMirrors();
+          } else {
+            // Plain click on the bar → seek + select + scroll transcript.
+            const turn = state.intervals.edit.find((t) => t._id === d.editId);
+            if (turn) {
+              els.audio.currentTime = turn.start;
+              setSelection(turn._id);
+              scrollTurnToTop(turn._id);
+            }
+          }
+          return;
+        }
+
+        // Create-mode end.
+        els.humanPreview.hidden = true;
+        const pxps = effectivePxps();
+        if (!pxps) return;
+        if (!d.moved) {
+          // Click in empty area → clear selection + plain seek.
+          const t = Math.max(0, Math.min(state.duration, d.startX / pxps));
+          els.audio.currentTime = t;
+          setSelection(null);
+          return;
+        }
+        // Create a new region from the drag span; select it.
+        const startT = Math.max(0, Math.min(state.duration, Math.min(d.startX, d.currentX) / pxps));
+        const endT   = Math.max(0, Math.min(state.duration, Math.max(d.startX, d.currentX) / pxps));
+        if (endT - startT < 0.05) return;
+        const id = newIntervalId();
+        state.regions?.addRegion({
+          id,
+          start: startT,
+          end: endT,
+          color: "rgba(210, 153, 34, 0.3)",
+          drag: true,
+          resize: true,
+        });
+        requestAnimationFrame(() => {
+          setSelection(id);
+          scrollTurnToTop(id);
+        });
+      };
+      els.humanRow.addEventListener("pointerup", endDrag);
+      els.humanRow.addEventListener("pointercancel", endDrag);
+    })();
+
+    // ─── Theme (dark / light) ───
+    const THEME_KEY = "nimbus-annotate.theme";
+    const themeColors = {
+      dark:  { wave: "#4ad8a4", progress: "#6b95ff", cursor: "#ff5d5d" },
+      light: { wave: "#047857", progress: "#1d4ed8", cursor: "#dc2626" },
+    };
+    const themeBtn = document.getElementById("theme-toggle");
+    function applyTheme(theme) {
+      document.documentElement.dataset.theme = theme;
+      themeBtn.textContent = theme === "light" ? "☾" : "☀";
+      themeBtn.title = theme === "light" ? "Switch to dark" : "Switch to light";
+      if (state.ws) {
+        const c = themeColors[theme];
+        state.ws.setOptions({
+          waveColor: c.wave,
+          progressColor: c.progress,
+          cursorColor: c.cursor,
+        });
+      }
+    }
+    applyTheme(localStorage.getItem(THEME_KEY) || "dark");
+    themeBtn.addEventListener("click", () => {
+      const next = document.documentElement.dataset.theme === "light" ? "dark" : "light";
+      localStorage.setItem(THEME_KEY, next);
+      applyTheme(next);
+    });
+
+    // ─── Floating transport (always-on play/pause + skip + interval marking) ───
+    const transportPlay = document.getElementById("transport-playpause");
+    document.getElementById("transport-back").addEventListener("click", () => skipAudio(-SKIP_SECONDS));
+    document.getElementById("transport-fwd").addEventListener("click", () => skipAudio(SKIP_SECONDS));
+    document.getElementById("transport-mark-start").addEventListener("click", markIntervalStart);
+    document.getElementById("transport-mark-end").addEventListener("click", commitIntervalEnd);
+    transportPlay.addEventListener("click", () => {
+      // Use the audio element directly (not state.ws) so the button works even
+      // before wavesurfer has decoded the waveform.
+      if (els.audio.paused) els.audio.play(); else els.audio.pause();
+    });
+    const transportIcon = document.getElementById("transport-icon");
+    const reflectPlayPause = () => { transportIcon.textContent = els.audio.paused ? "▶" : "❚❚"; };
+    els.audio.addEventListener("play", reflectPlayPause);
+    els.audio.addEventListener("pause", reflectPlayPause);
+    els.audio.addEventListener("ended", reflectPlayPause);
+    reflectPlayPause();
+
+    // Pinch (Mac trackpad → wheel + ctrlKey) and wheel-scroll → zoom on the waveform
+    // and on either mirror row. preventDefault keeps the page from scrolling.
+    function attachWheelZoom(el) {
+      el.addEventListener("wheel", (e) => {
+        if (!state.ws || !state.duration) return;
+        if (Math.abs(e.deltaY) < 0.5) return;
+        e.preventDefault();
+        const minFit = els.waveform.clientWidth / Math.max(state.duration, 1);
+        const cur = pendingZoom ?? (state.ws.options.minPxPerSec || minFit);
+        const step = e.ctrlKey ? 1.08 : 1.05;
+        const factor = e.deltaY < 0 ? step : 1 / step;
+        const next = Math.max(minFit, Math.min(500, cur * factor));
+        applyZoom(next);
+      }, { passive: false });
+    }
+    attachWheelZoom(els.waveform);
+    attachWheelZoom(els.gtRow);
+    attachWheelZoom(els.humanRow);
+
+    // ─── Annotator input wiring ───
+    (function wireAnnotator() {
+      const input = document.getElementById("annotator-input");
+      const label = document.getElementById("annotator-current");
+      const reflect = () => {
+        input.value = ANNOTATOR;
+        label.textContent = `Saves will be filed as: ${ANNOTATOR}`;
+      };
+      reflect();
+      const commit = () => {
+        const next = sanitizeAnnotator(input.value);
+        if (next === ANNOTATOR) { reflect(); return; }
+        ANNOTATOR = next;
+        annotatorQS = `annotator=${encodeURIComponent(ANNOTATOR)}`;
+        localStorage.setItem(ANNOTATOR_KEY, ANNOTATOR);
+        reflect();
+        // Refresh the list so this annotator's progress/done counts show.
+        loadConversations();
+        setStatus(`Identity set to "${ANNOTATOR}". Reload the current conversation to load your prior saves.`, "success");
+      };
+      input.addEventListener("change", commit);
+      input.addEventListener("blur", commit);
+      input.addEventListener("keydown", (e) => { if (e.key === "Enter") { commit(); input.blur(); } });
+    })();
+
+    document.addEventListener("click", (e) => {
+      const toggle = e.target.closest(".collapse-toggle");
+      if (!toggle) return;
+      const section = toggle.closest(".collapsible");
+      if (!section) return;
+      const collapsed = section.getAttribute("data-collapsed") === "true";
+      section.setAttribute("data-collapsed", collapsed ? "false" : "true");
+    });
+
+    loadConversations();
+  </script>
+</body>
+</html>
